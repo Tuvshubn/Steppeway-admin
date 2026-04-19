@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE = import.meta.env.VITE_API_URL || 'https://steppeway-back-end.vercel.app/';
+const BASE = import.meta.env.VITE_API_URL || "https://steppeway-back-end.vercel.app/";
 
 const api = axios.create({baseURL: BASE});
 api.interceptors.request.use(cfg => {
