@@ -113,7 +113,7 @@ function AboutEditor({ showToast }) {
 
 // ── TOURS EDITOR ───────────────────────────────
 function ToursEditor({ showToast }) {
-  const [tours, setTours] = useState([]); const [editing, setEditing] = useState(null); const [saving, setSaving] = useState(false); const [uploading, setUploading] = useState(false);
+  const [tours, setTours] = useState([]); const [editing, setEditing] = useState(null); const [saving, setSaving] = useState(false); const [uploading, setUploading] = useState(false); const [itineraryTour, setItineraryTour] = useState(null);
   const empty = { title_mn:'', title_en:'', description_mn:'', description_en:'', price:'', duration_mn:'', duration_en:'', tour_type:'', difficulty:'', group_size:'', season:'', highlights:'', itinerary:'', included:'', not_included:'', is_active:1 };
   const load = () => api.getTours().then(r => setTours(r.data));
   useEffect(() => { load(); }, []);
@@ -199,6 +199,7 @@ function ToursEditor({ showToast }) {
                   <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>uploadImg(e,tour.id)} />
                 </label>
                 <button className="btn btn-secondary btn-sm" onClick={()=>setEditing({...tour})}>✏️</button>
+                <button className="btn btn-secondary btn-sm" onClick={()=>setItineraryTour(tour)} title="Маршрут засах">📅</button>
                 <button className="btn btn-danger btn-sm" onClick={()=>del(tour.id)}>🗑</button>
               </div>
             </div>
@@ -206,6 +207,167 @@ function ToursEditor({ showToast }) {
           {!tours.length && <div style={{color:'var(--muted)',textAlign:'center',padding:'2rem'}}>Аялал байхгүй байна</div>}
         </div>
       </div>
+    </div>
+  );
+}
+
+
+// ── ITINERARY EDITOR ───────────────────────────
+function ItineraryEditor({ tour, showToast, onClose }) {
+  const [days, setDays] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(null); // dayId being uploaded
+  const [editingDay, setEditingDay] = useState(null); // { day_number, title_en, description_en }
+  const totalDays = parseInt(String(tour.duration_en || tour.duration_mn || '').match(/\d+/)?.[0] || 7);
+
+  const load = async () => {
+    setLoading(true);
+    try { const r = await api.getTourDays(tour.id); setDays(r.data); }
+    catch { showToast('Ачаалахад алдаа', 'error'); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, [tour.id]);
+
+  const saveDay = async (dayNum, title, desc) => {
+    setSaving(true);
+    try {
+      await api.saveTourDay(tour.id, { day_number: dayNum, title_en: title, description_en: desc });
+      showToast(`${dayNum}-р өдөр хадгалагдлаа`, 'success');
+      setEditingDay(null);
+      await load();
+    } catch { showToast('Хадгалахад алдаа', 'error'); }
+    finally { setSaving(false); }
+  };
+
+  const deleteDay = async (dayId) => {
+    if (!confirm('Энэ өдрийг устгах уу?')) return;
+    try { await api.deleteTourDay(tour.id, dayId); await load(); showToast('Устгагдлаа', 'success'); }
+    catch { showToast('Алдаа', 'error'); }
+  };
+
+  const uploadImg = async (dayId, files) => {
+    setUploading(dayId);
+    try {
+      for (const file of Array.from(files)) {
+        await api.uploadDayImage(tour.id, dayId, file);
+      }
+      await load();
+      showToast('Зураг оруулагдлаа', 'success');
+    } catch { showToast('Upload алдаа', 'error'); }
+    finally { setUploading(null); }
+  };
+
+  const deleteImg = async (dayId, imgId) => {
+    if (!confirm('Зургийг устгах уу?')) return;
+    try { await api.deleteDayImage(tour.id, dayId, imgId); await load(); showToast('Устгагдлаа', 'success'); }
+    catch { showToast('Алдаа', 'error'); }
+  };
+
+  // Map saved days by day_number
+  const dayMap = {};
+  days.forEach(d => { dayMap[d.day_number] = d; });
+
+  return (
+    <div className="itinerary-editor-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="itinerary-editor">
+        <div className="itinerary-editor-header">
+          <div>
+            <div className="page-title">📅 Маршрут засах</div>
+            <div className="page-sub">{tour.title_en || tour.title_mn} — {totalDays} өдөр</div>
+          </div>
+          <button className="btn btn-secondary" onClick={onClose}>✕ Хаах</button>
+        </div>
+
+        {loading ? (
+          <div className="loading"><div className="spinner" /></div>
+        ) : (
+          <div className="days-list">
+            {Array.from({ length: totalDays }, (_, i) => i + 1).map(dayNum => {
+              const day = dayMap[dayNum];
+              const isEditing = editingDay?.day_number === dayNum;
+              return (
+                <div key={dayNum} className={`day-item ${day ? 'has-data' : 'empty'}`}>
+                  <div className="day-header">
+                    <div className="day-badge">Өдөр {dayNum}</div>
+                    <div className="day-title-preview">
+                      {day ? (day.title_en || '(Гарчиггүй)') : '— Мэдээлэл оруулаагүй —'}
+                    </div>
+                    <div className="day-actions">
+                      <button className="btn btn-secondary btn-sm"
+                        onClick={() => setEditingDay(isEditing ? null : { day_number: dayNum, title_en: day?.title_en || '', description_en: day?.description_en || '' })}>
+                        {isEditing ? '▲ Хаах' : '✏️ Засах'}
+                      </button>
+                      {day && <button className="btn btn-danger btn-sm" onClick={() => deleteDay(day.id)}>🗑</button>}
+                    </div>
+                  </div>
+
+                  {isEditing && (
+                    <div className="day-edit-body">
+                      <div className="form-group">
+                        <label>Өдрийн гарчиг (EN)</label>
+                        <input
+                          value={editingDay.title_en}
+                          onChange={e => setEditingDay(d => ({...d, title_en: e.target.value}))}
+                          placeholder="e.g. Arrive Ulaanbaatar, transfer to hotel"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Дэлгэрэнгүй тайлбар</label>
+                        <textarea
+                          rows={4}
+                          value={editingDay.description_en}
+                          onChange={e => setEditingDay(d => ({...d, description_en: e.target.value}))}
+                          placeholder="Upon arrival at Chinggis Khaan International Airport, you will be greeted by your guide..."
+                        />
+                      </div>
+                      <div className="btn-row">
+                        <button className="btn btn-primary" disabled={saving} onClick={() => saveDay(editingDay.day_number, editingDay.title_en, editingDay.description_en)}>
+                          {saving ? '...' : '💾 Хадгалах'}
+                        </button>
+                        <button className="btn btn-secondary" onClick={() => setEditingDay(null)}>Болих</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {day && (
+                    <div className="day-images-section">
+                      <div className="day-images-header">
+                        <span className="day-images-label">🖼 Зургууд ({day.images?.length || 0})</span>
+                        <label className={`btn btn-secondary btn-sm ${uploading === day.id ? 'disabled' : ''}`} style={{cursor:'pointer'}}>
+                          {uploading === day.id ? '⏳ Оруулж байна...' : '+ Зураг нэмэх'}
+                          <input
+                            type="file" accept="image/*" multiple style={{display:'none'}}
+                            onChange={e => uploadImg(day.id, e.target.files)}
+                            disabled={uploading === day.id}
+                          />
+                        </label>
+                      </div>
+                      {day.images?.length > 0 && (
+                        <div className="day-images-grid">
+                          {day.images.map(img => (
+                            <div key={img.id} className="day-img-wrap">
+                              <img src={api.getImgUrl(img.image_url)} alt="" />
+                              <button className="day-img-delete" onClick={() => deleteImg(day.id, img.id)}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    {itineraryTour && (
+      <ItineraryEditor
+        tour={itineraryTour}
+        showToast={showToast}
+        onClose={() => setItineraryTour(null)}
+      />
+    )}
     </div>
   );
 }

@@ -37,3 +37,15 @@ export const getContact = () => api.get('/api/contact');
 export const updateContact = (d) => api.put('/api/contact', d);
 export const getMessages = () => api.get('/api/contact/messages');
 export const getImgUrl = (url) => url ? `${BASE}${url}` : null;
+
+// Tour days
+export const getTourDays = (tourId) => api.get(`/api/tours/${tourId}/days`);
+export const saveTourDay = (tourId, data) => api.post(`/api/tours/${tourId}/days`, data);
+export const deleteTourDay = (tourId, dayId) => api.delete(`/api/tours/${tourId}/days/${dayId}`);
+export const uploadDayImage = (tourId, dayId, file, caption = '') => {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('caption', caption);
+  return api.post(`/api/tours/${tourId}/days/${dayId}/images`, fd);
+};
+export const deleteDayImage = (tourId, dayId, imgId) => api.delete(`/api/tours/${tourId}/days/${dayId}/images/${imgId}`);
