@@ -372,6 +372,98 @@ function ItineraryEditor({ tour, showToast, onClose }) {
   );
 }
 
+
+// ── TESTIMONIALS EDITOR ────────────────────────
+function TestimonialsEditor({ showToast }) {
+  const [items, setItems] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const empty = { author_name:'', country:'', stars:5, text:'', tour_name:'', is_active:1 };
+
+  const load = () => api.getTestimonials().then(r => setItems(r.data)).catch(() => {});
+  useEffect(() => { load(); }, []);
+
+  const save = async () => {
+    if (!editing.author_name || !editing.text) return showToast('Нэр болон текст шаардлагатай', 'error');
+    setSaving(true);
+    try {
+      if (editing.id) await api.updateTestimonial(editing.id, editing);
+      else await api.createTestimonial(editing);
+      showToast('Хадгалагдлаа', 'success');
+      setEditing(null); load();
+    } catch { showToast('Алдаа', 'error'); }
+    finally { setSaving(false); }
+  };
+
+  const del = async (id) => {
+    if (!confirm('Устгах уу?')) return;
+    await api.deleteTestimonial(id); load(); showToast('Устгагдлаа', 'success');
+  };
+
+  return (
+    <div>
+      <div className="page-header" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div><div className="page-title">Хэрэглэгчдийн сэтгэгдэл</div><div className="page-sub">Testimonials удирдах</div></div>
+        <button className="btn btn-primary" onClick={()=>setEditing({...empty})}>+ Шинэ сэтгэгдэл</button>
+      </div>
+
+      {editing && (
+        <div className="card">
+          <div className="card-title">{editing.id ? '✏️ Засах' : '➕ Шинэ сэтгэгдэл'}</div>
+          <div className="form-grid">
+            <div className="form-group"><label>Нэр *</label><input value={editing.author_name} onChange={e=>setEditing(d=>({...d,author_name:e.target.value}))} placeholder="Sarah M." /></div>
+            <div className="form-group"><label>Улс / Байршил</label><input value={editing.country||''} onChange={e=>setEditing(d=>({...d,country:e.target.value}))} placeholder="🇺🇸 United States" /></div>
+            <div className="form-group"><label>Аялалын нэр</label><input value={editing.tour_name||''} onChange={e=>setEditing(d=>({...d,tour_name:e.target.value}))} placeholder="Gobi Desert Adventure" /></div>
+            <div className="form-group"><label>Үнэлгээ (1-5 ⭐)</label>
+              <select value={editing.stars} onChange={e=>setEditing(d=>({...d,stars:Number(e.target.value)}))}>
+                {[5,4,3,2,1].map(s=><option key={s} value={s}>{'⭐'.repeat(s)} ({s})</option>)}
+              </select>
+            </div>
+            <div className="form-group full"><label>Сэтгэгдэл *</label>
+              <textarea rows={4} value={editing.text} onChange={e=>setEditing(d=>({...d,text:e.target.value}))} placeholder="An absolutely life-changing experience..." />
+            </div>
+            <div className="form-group"><label>Идэвхтэй эсэх</label>
+              <select value={editing.is_active} onChange={e=>setEditing(d=>({...d,is_active:Number(e.target.value)}))}>
+                <option value={1}>Идэвхтэй (харагдана)</option>
+                <option value={0}>Нуугдсан</option>
+              </select>
+            </div>
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving?'Хадгалж байна...':'💾 Хадгалах'}</button>
+            <button className="btn btn-secondary" onClick={()=>setEditing(null)}>Болих</button>
+          </div>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="card-title">💬 Сэтгэгдлүүд ({items.length})</div>
+        <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+          {items.map(item => (
+            <div key={item.id} style={{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:'8px',padding:'1rem',display:'flex',gap:'1rem',alignItems:'flex-start'}}>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',alignItems:'center',gap:'0.75rem',marginBottom:'0.4rem',flexWrap:'wrap'}}>
+                  <span style={{fontWeight:700,color:'var(--text)'}}>{item.author_name}</span>
+                  <span style={{fontSize:'0.75rem',color:'var(--muted)'}}>{item.country}</span>
+                  <span style={{color:'#f59e0b',fontSize:'0.9rem'}}>{'⭐'.repeat(item.stars)}</span>
+                  {item.tour_name && <span style={{fontSize:'0.75rem',background:'var(--primary-light,#e8f5ef)',color:'var(--primary,#2d6a4f)',padding:'0.15rem 0.6rem',borderRadius:'100px'}}>{item.tour_name}</span>}
+                  <span style={{fontSize:'0.72rem',padding:'0.15rem 0.6rem',borderRadius:'100px',background:item.is_active?'#d1fae5':'#fee2e2',color:item.is_active?'#065f46':'#991b1b'}}>{item.is_active?'Идэвхтэй':'Нуугдсан'}</span>
+                </div>
+                <p style={{fontSize:'0.88rem',color:'var(--muted)',fontStyle:'italic',lineHeight:1.6}}>"{item.text}"</p>
+              </div>
+              <div style={{display:'flex',gap:'0.4rem',flexShrink:0}}>
+                <button className="btn btn-secondary btn-sm" onClick={()=>setEditing({...item})}>✏️</button>
+                <button className="btn btn-danger btn-sm" onClick={()=>del(item.id)}>🗑</button>
+              </div>
+            </div>
+          ))}
+          {!items.length && <div style={{color:'var(--muted)',textAlign:'center',padding:'2rem'}}>Сэтгэгдэл байхгүй байна</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── CONTACT EDITOR ─────────────────────────────
 function ContactEditor({ showToast }) {
   const [data, setData] = useState(null); const [saving, setSaving] = useState(false); const [msgs, setMsgs] = useState([]);
@@ -451,6 +543,7 @@ export default function App() {
     { id:'hero', icon:'🖼', label:'Hero хэсэг' },
     { id:'about', icon:'ℹ️', label:'Бидний тухай' },
     { id:'tours', icon:'🗺', label:'Аяллууд' },
+    { id:'testimonials', icon:'💬', label:'Сэтгэгдлүүд' },
     { id:'contact', icon:'📞', label:'Холбоо барих' },
   ];
 
@@ -475,6 +568,7 @@ export default function App() {
         {page==='hero' && <HeroEditor showToast={showToast} />}
         {page==='about' && <AboutEditor showToast={showToast} />}
         {page==='tours' && <ToursEditor showToast={showToast} />}
+        {page==='testimonials' && <TestimonialsEditor showToast={showToast} />}
         {page==='contact' && <ContactEditor showToast={showToast} />}
       </main>
       {toast && <Toast msg={toast.msg} type={toast.type} onDone={()=>setToast(null)} />}

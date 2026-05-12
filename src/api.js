@@ -49,3 +49,9 @@ export const uploadDayImage = (tourId, dayId, file, caption = '') => {
   return api.post(`/api/tours/${tourId}/days/${dayId}/images`, fd);
 };
 export const deleteDayImage = (tourId, dayId, imgId) => api.delete(`/api/tours/${tourId}/days/${dayId}/images/${imgId}`);
+
+// Testimonials
+export const getTestimonials = () => api.get('/api/testimonials/all');
+export const createTestimonial = (d) => api.post('/api/testimonials', d);
+export const updateTestimonial = (id, d) => api.put(`/api/testimonials/${id}`, d);
+export const deleteTestimonial = (id) => api.delete(`/api/testimonials/${id}`);
