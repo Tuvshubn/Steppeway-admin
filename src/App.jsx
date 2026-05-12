@@ -114,7 +114,7 @@ function AboutEditor({ showToast }) {
 // ── TOURS EDITOR ───────────────────────────────
 function ToursEditor({ showToast }) {
   const [tours, setTours] = useState([]); const [editing, setEditing] = useState(null); const [saving, setSaving] = useState(false); const [uploading, setUploading] = useState(false);
-  const empty = { title_mn:'', title_en:'', description_mn:'', description_en:'', price:'', duration_mn:'', duration_en:'', is_active:1 };
+  const empty = { title_mn:'', title_en:'', description_mn:'', description_en:'', price:'', duration_mn:'', duration_en:'', tour_type:'', difficulty:'', group_size:'', season:'', highlights:'', itinerary:'', included:'', not_included:'', is_active:1 };
   const load = () => api.getTours().then(r => setTours(r.data));
   useEffect(() => { load(); }, []);
   const save = async () => {
@@ -146,9 +146,28 @@ function ToursEditor({ showToast }) {
             <div className="form-group"><label>Title (EN)</label><input value={editing.title_en} onChange={e=>setEditing(d=>({...d,title_en:e.target.value}))} /></div>
             <div className="form-group full"><label>Тайлбар (МН)</label><textarea value={editing.description_mn} onChange={e=>setEditing(d=>({...d,description_mn:e.target.value}))} /></div>
             <div className="form-group full"><label>Description (EN)</label><textarea value={editing.description_en} onChange={e=>setEditing(d=>({...d,description_en:e.target.value}))} /></div>
-            <div className="form-group"><label>Үнэ (жишээ: $450)</label><input value={editing.price} onChange={e=>setEditing(d=>({...d,price:e.target.value}))} /></div>
-            <div className="form-group"><label>Хугацаа (МН)</label><input value={editing.duration_mn} onChange={e=>setEditing(d=>({...d,duration_mn:e.target.value}))} placeholder="5 хоног" /></div>
-            <div className="form-group"><label>Duration (EN)</label><input value={editing.duration_en} onChange={e=>setEditing(d=>({...d,duration_en:e.target.value}))} placeholder="5 Days" /></div>
+            <div className="form-group"><label>Үнэ (жишээ: From $450)</label><input value={editing.price} onChange={e=>setEditing(d=>({...d,price:e.target.value}))} /></div>
+            <div className="form-group"><label>Duration (EN) — 5 Days</label><input value={editing.duration_en} onChange={e=>setEditing(d=>({...d,duration_en:e.target.value}))} placeholder="5 Days" /></div>
+            <div className="form-group"><label>Хугацаа (МН) — 5 хоног</label><input value={editing.duration_mn} onChange={e=>setEditing(d=>({...d,duration_mn:e.target.value}))} placeholder="5 хоног" /></div>
+            <div className="form-group"><label>Аялалын төрөл (Tour Type)</label>
+              <select value={editing.tour_type||''} onChange={e=>setEditing(d=>({...d,tour_type:e.target.value}))}>
+                <option value="">-- Сонгох --</option>
+                <option>Adventure</option><option>Cultural</option><option>Nature</option>
+                <option>Wildlife</option><option>Winter</option><option>Photography</option>
+              </select>
+            </div>
+            <div className="form-group"><label>Хүндрэлийн түвшин (Difficulty)</label>
+              <select value={editing.difficulty||''} onChange={e=>setEditing(d=>({...d,difficulty:e.target.value}))}>
+                <option value="">-- Сонгох --</option>
+                <option>Easy</option><option>Moderate</option><option>Challenging</option><option>Expert</option>
+              </select>
+            </div>
+            <div className="form-group"><label>Бүлгийн хэмжээ (Group Size)</label><input value={editing.group_size||''} onChange={e=>setEditing(d=>({...d,group_size:e.target.value}))} placeholder="2-12 people" /></div>
+            <div className="form-group"><label>Улирал (Best Season)</label><input value={editing.season||''} onChange={e=>setEditing(d=>({...d,season:e.target.value}))} placeholder="Jun-Sep" /></div>
+            <div className="form-group full"><label>Онцлох зүйлс (Highlights) — мөр бүрт нэг</label><textarea rows={4} value={editing.highlights||''} onChange={e=>setEditing(d=>({...d,highlights:e.target.value}))} placeholder="Riding through the vast steppe&#10;Overnight in traditional ger&#10;Eagle hunting demonstration" /></div>
+            <div className="form-group full"><label>Маршрут (Itinerary) — мөр бүрт нэг өдөр</label><textarea rows={5} value={editing.itinerary||''} onChange={e=>setEditing(d=>({...d,itinerary:e.target.value}))} placeholder="Arrival in Ulaanbaatar, hotel check-in&#10;Drive to Terelj National Park&#10;Horse riding and ger camp" /></div>
+            <div className="form-group full"><label>Багтсан зүйлс (Included) — мөр бүрт нэг</label><textarea rows={3} value={editing.included||''} onChange={e=>setEditing(d=>({...d,included:e.target.value}))} placeholder="All accommodation&#10;Airport transfers&#10;English speaking guide" /></div>
+            <div className="form-group full"><label>Багтаагүй зүйлс (Not Included) — мөр бүрт нэг</label><textarea rows={3} value={editing.not_included||''} onChange={e=>setEditing(d=>({...d,not_included:e.target.value}))} placeholder="International flights&#10;Travel insurance&#10;Personal expenses" /></div>
             <div className="form-group"><label>Идэвхтэй эсэх</label>
               <select value={editing.is_active} onChange={e=>setEditing(d=>({...d,is_active:Number(e.target.value)}))}>
                 <option value={1}>Идэвхтэй</option><option value={0}>Идэвхгүй</option>
