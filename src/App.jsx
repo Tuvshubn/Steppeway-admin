@@ -274,7 +274,7 @@ function ItineraryEditor({ tour, showToast, onClose }) {
         <div className="itinerary-editor-header">
           <div>
             <div className="page-title">📅 Маршрут засах</div>
-            <div className="page-sub">{tour.title_en || tour.title_mn} — {totalDays} өдөр</div>
+            <div className="page-sub">{tour.title_en || tour.title_mn} — {totalDays} өдрийн маршрут {!tour.duration_en && !tour.duration_mn && <span style={{color:"#ef4444",fontSize:"0.8rem"}}>(Duration талбар хоосон байна!)</span>}</div>
           </div>
           <button className="btn btn-secondary" onClick={onClose}>✕ Хаах</button>
         </div>
